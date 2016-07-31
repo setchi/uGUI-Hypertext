@@ -34,7 +34,7 @@ public class RegexHypertext : HypertextBase
     /// <summary>
     /// 正規表現にマッチした部分文字列に色とクリックイベントを登録します
     /// </summary>
-    /// <param name="regexPattern">正規兵家</param>
+    /// <param name="regexPattern">正規表現</param>
     /// <param name="color">正規表現でマッチしたテキストの色</param>
     /// <param name="onClick">クリック時のコールバック</param>
     public void SetClickableByRegex(string regexPattern, Color color, Action<string> onClick)
