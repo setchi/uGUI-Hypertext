@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-public class RegexHypertext : Hypertext
+public class RegexHypertext : HypertextBase
 {
     readonly Dictionary<string, RegexEntry> _regexEntryTable = new Dictionary<string, RegexEntry>();
 

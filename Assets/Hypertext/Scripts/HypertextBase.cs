@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using HypertextHelper;
 
-public abstract class Hypertext : Text, IPointerClickHandler
+public abstract class HypertextBase : Text, IPointerClickHandler
 {
     const int CharVertsNum = 6;
     readonly List<ClickableEntry> _entries = new List<ClickableEntry>();
