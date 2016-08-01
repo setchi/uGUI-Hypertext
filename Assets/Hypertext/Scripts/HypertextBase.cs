@@ -14,19 +14,15 @@ public abstract class HypertextBase : Text, IPointerClickHandler
     struct ClickableEntry
     {
         public int WordStartIndex;
-        public int WordLength;
-
         public string Word;
         public Color Color;
         public Action<string> OnClick;
-
         public List<Rect> Rects;
 
-        public ClickableEntry(string word, int startIndex, int wordLength, Color color, Action<string> onClick)
+        public ClickableEntry(string word, int startIndex, Color color, Action<string> onClick)
         {
             Word = word;
             WordStartIndex = startIndex;
-            WordLength = wordLength;
             Color = color;
             OnClick = onClick;
             Rects = new List<Rect>();
@@ -52,7 +48,7 @@ public abstract class HypertextBase : Text, IPointerClickHandler
             return;
         }
 
-        _entries.Add(new ClickableEntry(text.Substring(wordStartIndex, wordLength), wordStartIndex, wordLength, color, onClick));
+        _entries.Add(new ClickableEntry(text.Substring(wordStartIndex, wordLength), wordStartIndex, color, onClick));
     }
 
     /// <summary>
@@ -94,7 +90,7 @@ public abstract class HypertextBase : Text, IPointerClickHandler
         {
             var entry = _entries[i];
 
-            for (int textIndex = entry.WordStartIndex, wordEndIndex = entry.WordStartIndex + entry.WordLength; textIndex < wordEndIndex; textIndex++)
+            for (int textIndex = entry.WordStartIndex, wordEndIndex = entry.WordStartIndex + entry.Word.Length; textIndex < wordEndIndex; textIndex++)
             {
                 var vertexStartIndex = textIndex * CharVertsNum;
                 if (vertexStartIndex + CharVertsNum > verticesCount)
@@ -221,6 +217,11 @@ public abstract class HypertextBase : Text, IPointerClickHandler
 
         foreach (var entry in _entries)
         {
+            if (entry.OnClick == null)
+            {
+                continue;
+            }
+
             foreach (var rect in entry.Rects)
             {
                 if (!rect.Contains(localPosition))
@@ -228,11 +229,7 @@ public abstract class HypertextBase : Text, IPointerClickHandler
                     continue;
                 }
 
-                if (entry.OnClick != null)
-                {
-                    entry.OnClick(entry.Word);
-                }
-
+                entry.OnClick(entry.Word);
                 break;
             }
         }
