@@ -107,9 +107,9 @@ public abstract class HypertextBase : Text, IPointerClickHandler
 
                 for (int vertexIndex = 0; vertexIndex < CharVertsNum; vertexIndex++)
                 {
-                    var uiVertex = vertices[vertexStartIndex + vertexIndex];
-                    uiVertex.color = entry.Color;
-                    vertices[vertexStartIndex + vertexIndex] = uiVertex;
+                    var vertex = vertices[vertexStartIndex + vertexIndex];
+                    vertex.color = entry.Color;
+                    vertices[vertexStartIndex + vertexIndex] = vertex;
 
                     var pos = vertices[vertexStartIndex + vertexIndex].position;
 
@@ -134,17 +134,17 @@ public abstract class HypertextBase : Text, IPointerClickHandler
                     }
                 }
 
-                var rect = new Rect();
-                rect.min = min;
-                rect.max = max;
-                entry.Rects.Add(rect);
+                var charRect = new Rect();
+                charRect.min = min;
+                charRect.max = max;
+                entry.Rects.Add(charRect);
             }
 
             // 同じ行で隣り合った矩形をまとめる
             var mergedRects = new List<Rect>();
-            foreach (var rowRects in SplitRectsByRow(entry.Rects))
+            foreach (var charRects in SplitRectsByRow(entry.Rects))
             {
-                mergedRects.Add(MergeRects(rowRects));
+                mergedRects.Add(MergeRects(charRects));
             }
 
             entry.Rects = mergedRects;

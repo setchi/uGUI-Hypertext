@@ -7,17 +7,17 @@ namespace HypertextHelper
     public class ObjectPool<T> where T : new()
     {
         readonly Stack<T> _stack = new Stack<T>();
-        readonly UnityAction<T> _actionOnGet;
-        readonly UnityAction<T> _actionOnRelease;
+        readonly UnityAction<T> _onGet;
+        readonly UnityAction<T> _onRelease;
 
         public int CountAll { get; set; }
         public int CountActive { get { return CountAll - CountInactive; } }
         public int CountInactive { get { return _stack.Count; } }
 
-        public ObjectPool(UnityAction<T> actionOnGet, UnityAction<T> actionOnRelease)
+        public ObjectPool(UnityAction<T> onGet, UnityAction<T> onRelease)
         {
-            _actionOnGet = actionOnGet;
-            _actionOnRelease = actionOnRelease;
+            _onGet = onGet;
+            _onRelease = onRelease;
         }
 
         public T Get()
@@ -33,9 +33,9 @@ namespace HypertextHelper
                 element = _stack.Pop();
             }
 
-            if (_actionOnGet != null)
+            if (_onGet != null)
             {
-                _actionOnGet(element);
+                _onGet(element);
             }
 
             return element;
@@ -48,9 +48,9 @@ namespace HypertextHelper
                 Debug.LogError("Internal error. Trying to destroy object that is already released to pool.");
             }
 
-            if (_actionOnRelease != null)
+            if (_onRelease != null)
             {
-                _actionOnRelease(element);
+                _onRelease(element);
             }
 
             _stack.Push(element);

@@ -5,17 +5,17 @@ using UnityEngine;
 
 public class RegexHypertext : HypertextBase
 {
-    readonly Dictionary<string, RegexEntry> _regexEntryTable = new Dictionary<string, RegexEntry>();
+    readonly Dictionary<string, Entry> _entryTable = new Dictionary<string, Entry>();
 
-    struct RegexEntry
+    struct Entry
     {
-        public string Pattern;
+        public string RegexPattern;
         public Color Color;
         public Action<string> OnClick;
 
-        public RegexEntry(string pattern, Color color, Action<string> onClick)
+        public Entry(string regexPattern, Color color, Action<string> onClick)
         {
-            Pattern = pattern;
+            RegexPattern = regexPattern;
             Color = color;
             OnClick = onClick;
         }
@@ -44,13 +44,13 @@ public class RegexHypertext : HypertextBase
             return;
         }
 
-        _regexEntryTable[regexPattern] = new RegexEntry(regexPattern, color, onClick);
+        _entryTable[regexPattern] = new Entry(regexPattern, color, onClick);
     }
 
     public override void RemoveClickable()
     {
         base.RemoveClickable();
-        _regexEntryTable.Clear();
+        _entryTable.Clear();
     }
 
     /// <summary>
@@ -59,11 +59,11 @@ public class RegexHypertext : HypertextBase
     /// </summary>
     protected override void RegisterClickable()
     {
-        foreach (var regexEntry in _regexEntryTable.Values)
+        foreach (var entry in _entryTable.Values)
         {
-            foreach (Match m in Regex.Matches(text, regexEntry.Pattern))
+            foreach (Match match in Regex.Matches(text, entry.RegexPattern))
             {
-                RegisterClickable(m.Index, m.Value.Length, regexEntry.Color, regexEntry.OnClick);
+                RegisterClickable(match.Index, match.Value.Length, entry.Color, entry.OnClick);
             }
         }
     }
