@@ -1,20 +1,19 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.Events;
+﻿using System;
+using System.Collections.Generic;
 
 namespace HypertextHelper
 {
     public class ObjectPool<T> where T : new()
     {
         readonly Stack<T> _stack = new Stack<T>();
-        readonly UnityAction<T> _onGet;
-        readonly UnityAction<T> _onRelease;
+        readonly Action<T> _onGet;
+        readonly Action<T> _onRelease;
 
         public int CountAll { get; set; }
         public int CountActive { get { return CountAll - CountInactive; } }
         public int CountInactive { get { return _stack.Count; } }
 
-        public ObjectPool(UnityAction<T> onGet, UnityAction<T> onRelease)
+        public ObjectPool(Action<T> onGet, Action<T> onRelease)
         {
             _onGet = onGet;
             _onRelease = onRelease;
@@ -45,7 +44,7 @@ namespace HypertextHelper
         {
             if (_stack.Count > 0 && ReferenceEquals(_stack.Peek(), element))
             {
-                Debug.LogError("Internal error. Trying to destroy object that is already released to pool.");
+                UnityEngine.Debug.LogError("Internal error. Trying to destroy object that is already released to pool.");
             }
 
             if (_onRelease != null)

@@ -1,9 +1,9 @@
-﻿using System;
+﻿using HypertextHelper;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using HypertextHelper;
 
 public abstract class HypertextBase : Text, IPointerClickHandler
 {
@@ -13,8 +13,8 @@ public abstract class HypertextBase : Text, IPointerClickHandler
 
     struct ClickableEntry
     {
-        public int WordStartIndex;
         public string Word;
+        public int StartIndex;
         public Color Color;
         public Action<string> OnClick;
         public List<Rect> Rects;
@@ -22,7 +22,7 @@ public abstract class HypertextBase : Text, IPointerClickHandler
         public ClickableEntry(string word, int startIndex, Color color, Action<string> onClick)
         {
             Word = word;
-            WordStartIndex = startIndex;
+            StartIndex = startIndex;
             Color = color;
             OnClick = onClick;
             Rects = new List<Rect>();
@@ -32,23 +32,23 @@ public abstract class HypertextBase : Text, IPointerClickHandler
     /// <summary>
     /// クリック可能領域に関する情報を登録します
     /// </summary>
-    /// <param name="wordStartIndex">対象ワードの開始インデックス</param>
+    /// <param name="startIndex">対象ワードの開始インデックス</param>
     /// <param name="wordLength">対象ワードの文字数</param>
     /// <param name="color">対象ワードにつける色</param>
     /// <param name="onClick">対象ワードがクリックされたときのコールバック</param>
-    protected void RegisterClickable(int wordStartIndex, int wordLength, Color color, Action<string> onClick)
+    protected void RegisterClickable(int startIndex, int wordLength, Color color, Action<string> onClick)
     {
         if (onClick == null)
         {
             return;
         }
 
-        if (wordStartIndex < 0 || wordLength < 0 || wordStartIndex + wordLength > text.Length)
+        if (startIndex < 0 || wordLength < 0 || startIndex + wordLength > text.Length)
         {
             return;
         }
 
-        _entries.Add(new ClickableEntry(text.Substring(wordStartIndex, wordLength), wordStartIndex, color, onClick));
+        _entries.Add(new ClickableEntry(text.Substring(startIndex, wordLength), startIndex, color, onClick));
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ public abstract class HypertextBase : Text, IPointerClickHandler
         {
             var entry = _entries[i];
 
-            for (int textIndex = entry.WordStartIndex, wordEndIndex = entry.WordStartIndex + entry.Word.Length; textIndex < wordEndIndex; textIndex++)
+            for (int textIndex = entry.StartIndex, wordEndIndex = entry.StartIndex + entry.Word.Length; textIndex < wordEndIndex; textIndex++)
             {
                 var vertexStartIndex = textIndex * CharVertsNum;
                 if (vertexStartIndex + CharVertsNum > verticesCount)
@@ -130,10 +130,7 @@ public abstract class HypertextBase : Text, IPointerClickHandler
                     }
                 }
 
-                var charRect = new Rect();
-                charRect.min = min;
-                charRect.max = max;
-                entry.Rects.Add(charRect);
+                entry.Rects.Add(new Rect { min = min, max = max });
             }
 
             // 同じ行で隣り合った矩形をまとめる
@@ -198,10 +195,7 @@ public abstract class HypertextBase : Text, IPointerClickHandler
             }
         }
 
-        var rect = new Rect();
-        rect.min = min;
-        rect.max = max;
-        return rect;
+        return new Rect { min = min, max = max };
     }
 
     // TODO: Canvas の Render Mode によって localPosition の算出方法を変える
