@@ -7,11 +7,12 @@ using UnityEngine.UI;
 
 public abstract class HypertextBase : Text, IPointerClickHandler
 {
+    Canvas _rootCanvas;
+    Canvas RootCanvas { get { return _rootCanvas ?? (_rootCanvas = GetComponentInParent<Canvas>()); } }
+
     const int CharVertsNum = 6;
     readonly List<ClickableEntry> _entries = new List<ClickableEntry>();
     static readonly ObjectPool<List<UIVertex>> _verticesPool = new ObjectPool<List<UIVertex>>(null, l => l.Clear());
-    Canvas _rootCanvas;
-    Canvas RootCanvas { get { return _rootCanvas ?? (_rootCanvas = GetComponentInParent<Canvas>()); } }
 
     struct ClickableEntry
     {
