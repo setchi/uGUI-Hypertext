@@ -10,6 +10,8 @@ public abstract class HypertextBase : Text, IPointerClickHandler
     const int CharVertsNum = 6;
     readonly List<ClickableEntry> _entries = new List<ClickableEntry>();
     static readonly ObjectPool<List<UIVertex>> _verticesPool = new ObjectPool<List<UIVertex>>(null, l => l.Clear());
+    Canvas _rootCanvas;
+    Canvas RootCanvas { get { return _rootCanvas ?? (_rootCanvas = GetComponentInParent<Canvas>()); } }
 
     struct ClickableEntry
     {
@@ -198,16 +200,26 @@ public abstract class HypertextBase : Text, IPointerClickHandler
         return new Rect { min = min, max = max };
     }
 
-    // TODO: Canvas の Render Mode によって localPosition の算出方法を変える
-    Vector3 ToLocalPosition(Vector3 position)
+    Vector3 ToLocalPosition(Vector3 position, Camera camera)
     {
-        var localPosition = transform.InverseTransformPoint(position);
+        if (!RootCanvas)
+        {
+            return Vector3.zero;
+        }
+
+        if (RootCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
+        {
+            return transform.InverseTransformPoint(position);
+        }
+
+        var localPosition = Vector2.zero;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, position, camera, out localPosition);
         return localPosition;
     }
 
     void IPointerClickHandler.OnPointerClick(PointerEventData eventData)
     {
-        var localPosition = ToLocalPosition(eventData.position);
+        var localPosition = ToLocalPosition(eventData.position, eventData.pressEventCamera);
 
         foreach (var entry in _entries)
         {
