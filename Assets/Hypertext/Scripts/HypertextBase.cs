@@ -205,7 +205,7 @@ public abstract class HypertextBase : Text, IPointerClickHandler
         return localPosition;
     }
 
-    public void OnPointerClick(PointerEventData eventData)
+    void IPointerClickHandler.OnPointerClick(PointerEventData eventData)
     {
         var localPosition = ToLocalPosition(eventData.position);
 
