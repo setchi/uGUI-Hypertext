@@ -140,7 +140,7 @@ public abstract class HypertextBase : Text, IPointerClickHandler
             var mergedRects = new List<Rect>();
             foreach (var charRects in SplitRectsByRow(entry.Rects))
             {
-                mergedRects.Add(MergeRects(charRects));
+                mergedRects.Add(CalculateAABB(charRects));
             }
 
             entry.Rects = mergedRects;
@@ -170,7 +170,7 @@ public abstract class HypertextBase : Text, IPointerClickHandler
         return rectsList;
     }
 
-    Rect MergeRects(List<Rect> rects)
+    Rect CalculateAABB(List<Rect> rects)
     {
         var min = Vector2.one * float.MaxValue;
         var max = Vector2.one * float.MinValue;
@@ -222,22 +222,15 @@ public abstract class HypertextBase : Text, IPointerClickHandler
     {
         var localPosition = ToLocalPosition(eventData.position, eventData.pressEventCamera);
 
-        foreach (var entry in _entries)
+        for (int i = 0; i < _entries.Count; i++)
         {
-            if (entry.OnClick == null)
+            for (int j = 0; j < _entries[i].Rects.Count; j++)
             {
-                continue;
-            }
-
-            foreach (var rect in entry.Rects)
-            {
-                if (!rect.Contains(localPosition))
+                if (_entries[i].Rects[j].Contains(localPosition))
                 {
-                    continue;
+                    _entries[i].OnClick(_entries[i].Word);
+                    break;
                 }
-
-                entry.OnClick(entry.Word);
-                break;
             }
         }
     }
