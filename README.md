@@ -4,7 +4,7 @@ Hypertext for uGUI
 ![screencast](screencast.gif)
 
 ## Environment
-Unity 2017.1.0f3
+Unity 2018.2.12f1
 
 ## License
 MIT
