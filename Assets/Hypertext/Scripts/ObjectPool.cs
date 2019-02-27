@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace HypertextHelper
+namespace Hypertext
 {
     public class ObjectPool<T> where T : new()
     {
