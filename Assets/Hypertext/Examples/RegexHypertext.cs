@@ -7,19 +7,19 @@ namespace Hypertext
 {
     public class RegexHypertext : HypertextBase
     {
-        readonly Dictionary<string, Entry> _entryTable = new Dictionary<string, Entry>();
+        readonly List<Entry> entries = new List<Entry>();
 
         struct Entry
         {
             public string RegexPattern;
             public Color Color;
-            public Action<string> OnClick;
+            public Action<string> Callback;
 
-            public Entry(string regexPattern, Color color, Action<string> onClick)
+            public Entry(string regexPattern, Color color, Action<string> callback)
             {
                 RegexPattern = regexPattern;
                 Color = color;
-                OnClick = onClick;
+                Callback = callback;
             }
         }
 
@@ -28,44 +28,45 @@ namespace Hypertext
         /// </summary>
         /// <param name="regexPattern">正規表現</param>
         /// <param name="onClick">クリック時のコールバック</param>
-        public void SetClickableByRegex(string regexPattern, Action<string> onClick)
+        public void OnClick(string regexPattern, Action<string> onClick)
         {
-            SetClickableByRegex(regexPattern, color, onClick);
+            OnClick(regexPattern, color, onClick);
         }
 
         /// <summary>
         /// 正規表現にマッチした部分文字列に色とクリックイベントを登録します
         /// </summary>
         /// <param name="regexPattern">正規表現</param>
-        /// <param name="color">正規表現でマッチしたテキストの色</param>
+        /// <param name="color">テキストカラー</param>
         /// <param name="onClick">クリック時のコールバック</param>
-        public void SetClickableByRegex(string regexPattern, Color color, Action<string> onClick)
+        public void OnClick(string regexPattern, Color color, Action<string> onClick)
         {
             if (string.IsNullOrEmpty(regexPattern) || onClick == null)
             {
                 return;
             }
 
-            _entryTable[regexPattern] = new Entry(regexPattern, color, onClick);
+            entries.Add(new Entry(regexPattern, color, onClick));
         }
 
-        public override void RemoveClickable()
+        public override void RemoveListeners()
         {
-            base.RemoveClickable();
-            _entryTable.Clear();
+            base.RemoveListeners();
+            entries.Clear();
         }
 
         /// <summary>
-        /// テキストの変更などでクリックする文字位置の再計算が必要なときに呼び出されます
-        /// 親の RegisterClickable メソッドを使ってクリック対象文字の情報を登録してください
+        /// イベントリスナを追加します
+        /// テキストの変更などでイベントの再登録が必要なときにも呼び出されます
+        /// <see cref="HypertextBase.OnClick"/> を使ってクリックイベントを登録してください
         /// </summary>
-        protected override void RegisterClickable()
+        protected override void AddListeners()
         {
-            foreach (var entry in _entryTable.Values)
+            foreach (var entry in entries)
             {
                 foreach (Match match in Regex.Matches(text, entry.RegexPattern))
                 {
-                    RegisterClickable(match.Index, match.Value.Length, entry.Color, entry.OnClick);
+                    OnClick(match.Index, match.Value.Length, entry.Color, entry.Callback);
                 }
             }
         }

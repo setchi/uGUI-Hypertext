@@ -5,36 +5,36 @@ namespace Hypertext
 {
     public class ObjectPool<T> where T : new()
     {
-        readonly Stack<T> _stack = new Stack<T>();
-        readonly Action<T> _onGet;
-        readonly Action<T> _onRelease;
+        readonly Stack<T> stack = new Stack<T>();
+        readonly Action<T> onGet;
+        readonly Action<T> onRelease;
 
         public int CountAll { get; set; }
         public int CountActive { get { return CountAll - CountInactive; } }
-        public int CountInactive { get { return _stack.Count; } }
+        public int CountInactive { get { return stack.Count; } }
 
         public ObjectPool(Action<T> onGet, Action<T> onRelease)
         {
-            _onGet = onGet;
-            _onRelease = onRelease;
+            this.onGet = onGet;
+            this.onRelease = onRelease;
         }
 
         public T Get()
         {
             T element;
-            if (_stack.Count == 0)
+            if (stack.Count == 0)
             {
                 element = new T();
                 CountAll++;
             }
             else
             {
-                element = _stack.Pop();
+                element = stack.Pop();
             }
 
-            if (_onGet != null)
+            if (onGet != null)
             {
-                _onGet(element);
+                onGet(element);
             }
 
             return element;
@@ -42,17 +42,17 @@ namespace Hypertext
 
         public void Release(T element)
         {
-            if (_stack.Count > 0 && ReferenceEquals(_stack.Peek(), element))
+            if (stack.Count > 0 && ReferenceEquals(stack.Peek(), element))
             {
                 UnityEngine.Debug.LogError("Internal error. Trying to destroy object that is already released to pool.");
             }
 
-            if (_onRelease != null)
+            if (onRelease != null)
             {
-                _onRelease(element);
+                onRelease(element);
             }
 
-            _stack.Push(element);
+            stack.Push(element);
         }
     }
 }

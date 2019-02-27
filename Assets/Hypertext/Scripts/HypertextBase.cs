@@ -8,96 +8,103 @@ namespace Hypertext
 {
     public abstract class HypertextBase : Text, IPointerClickHandler
     {
-        Canvas _rootCanvas;
-        Canvas RootCanvas { get { return _rootCanvas ?? (_rootCanvas = GetComponentInParent<Canvas>()); } }
+        Canvas rootCanvas;
+        Canvas RootCanvas { get { return rootCanvas ?? (rootCanvas = GetComponentInParent<Canvas>()); } }
 
-        const int CharVertsNum = 6;
-        readonly List<ClickableEntry> _entries = new List<ClickableEntry>();
-        static readonly ObjectPool<List<UIVertex>> _verticesPool = new ObjectPool<List<UIVertex>>(null, l => l.Clear());
+        const int CharVerts = 6;
+        readonly List<Span> spans = new List<Span>();
+        static readonly ObjectPool<List<UIVertex>> verticesPool = new ObjectPool<List<UIVertex>>(null, l => l.Clear());
 
-        struct ClickableEntry
+        struct Span
         {
-            public string Word;
             public int StartIndex;
+            public int Length;
             public Color Color;
-            public Action<string> OnClick;
-            public List<Rect> Rects;
+            public Action<string> Callback;
+            public List<Rect> BoundingBoxes;
 
-            public ClickableEntry(string word, int startIndex, Color color, Action<string> onClick)
+            public Span(int startIndex, int endIndex, Color color, Action<string> callback)
             {
-                Word = word;
                 StartIndex = startIndex;
+                Length = endIndex;
                 Color = color;
-                OnClick = onClick;
-                Rects = new List<Rect>();
+                Callback = callback;
+                BoundingBoxes = new List<Rect>();
             }
         };
 
         /// <summary>
-        /// クリック可能領域に関する情報を登録します
+        /// 指定した部分文字列にクリックイベントを登録します
         /// </summary>
-        /// <param name="startIndex">対象ワードの開始インデックス</param>
-        /// <param name="wordLength">対象ワードの文字数</param>
-        /// <param name="color">対象ワードにつける色</param>
-        /// <param name="onClick">対象ワードがクリックされたときのコールバック</param>
-        protected void RegisterClickable(int startIndex, int wordLength, Color color, Action<string> onClick)
+        /// <param name="startIndex">部分文字列の開始文字位置</param>
+        /// <param name="length">部分文字列の長さ</param>
+        /// <param name="color">部分文字列につける色</param>
+        /// <param name="onClick">部分文字列がクリックされたときのコールバック</param>
+        protected void OnClick(int startIndex, int length, Color color, Action<string> onClick)
         {
             if (onClick == null)
             {
-                return;
+                throw new ArgumentNullException(nameof(onClick));
             }
 
-            if (startIndex < 0 || wordLength < 0 || startIndex + wordLength > text.Length)
+            if (startIndex < 0 || startIndex > text.Length - 1)
             {
-                return;
+                throw new ArgumentOutOfRangeException(nameof(startIndex));
             }
 
-            _entries.Add(new ClickableEntry(text.Substring(startIndex, wordLength), startIndex, color, onClick));
+            if (length < 1 || startIndex + length > text.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
+            }
+
+            spans.Add(new Span(startIndex, length, color, onClick));
         }
 
         /// <summary>
-        /// 登録した情報を削除します
+        /// イベントリスナを削除します
         /// </summary>
-        public virtual void RemoveClickable()
+        public virtual void RemoveListeners()
         {
-            _entries.Clear();
+            spans.Clear();
         }
 
         /// <summary>
-        /// テキストの変更などでクリックする文字位置の再計算が必要なときに呼び出されます
-        /// RegisterClickable を使ってクリック対象文字の情報を登録してください
+        /// イベントリスナを追加します
+        /// テキストの変更などでイベントの再登録が必要なときにも呼び出されます
+        /// <see cref="HypertextBase.OnClick"/> を使ってクリックイベントを登録してください
         /// </summary>
-        protected abstract void RegisterClickable();
+        protected abstract void AddListeners();
 
         protected override void OnPopulateMesh(VertexHelper vertexHelper)
         {
             base.OnPopulateMesh(vertexHelper);
 
-            _entries.Clear();
-            RegisterClickable();
+            spans.Clear();
+            AddListeners();
 
-            var vertices = _verticesPool.Get();
+            var vertices = verticesPool.Get();
             vertexHelper.GetUIVertexStream(vertices);
 
             Modify(ref vertices);
 
             vertexHelper.Clear();
             vertexHelper.AddUIVertexTriangleStream(vertices);
-            _verticesPool.Release(vertices);
+            verticesPool.Release(vertices);
         }
 
         void Modify(ref List<UIVertex> vertices)
         {
             var verticesCount = vertices.Count;
 
-            for (int i = 0, len = _entries.Count; i < len; i++)
+            for (int i = 0; i < spans.Count; i++)
             {
-                var entry = _entries[i];
+                var span = spans[i];
+                var endIndex = span.StartIndex + span.Length;
 
-                for (int textIndex = entry.StartIndex, wordEndIndex = entry.StartIndex + entry.Word.Length; textIndex < wordEndIndex; textIndex++)
+                for (int textIndex = span.StartIndex; textIndex < endIndex; textIndex++)
                 {
-                    var vertexStartIndex = textIndex * CharVertsNum;
-                    if (vertexStartIndex + CharVertsNum > verticesCount)
+                    var vertexStartIndex = textIndex * CharVerts;
+                    if (vertexStartIndex + CharVerts > verticesCount)
                     {
                         break;
                     }
@@ -105,10 +112,10 @@ namespace Hypertext
                     var min = Vector2.one * float.MaxValue;
                     var max = Vector2.one * float.MinValue;
 
-                    for (int vertexIndex = 0; vertexIndex < CharVertsNum; vertexIndex++)
+                    for (int vertexIndex = 0; vertexIndex < CharVerts; vertexIndex++)
                     {
                         var vertex = vertices[vertexStartIndex + vertexIndex];
-                        vertex.color = entry.Color;
+                        vertex.color = span.Color;
                         vertices[vertexStartIndex + vertexIndex] = vertex;
 
                         var pos = vertices[vertexStartIndex + vertexIndex].position;
@@ -134,41 +141,35 @@ namespace Hypertext
                         }
                     }
 
-                    entry.Rects.Add(new Rect { min = min, max = max });
+                    span.BoundingBoxes.Add(new Rect { min = min, max = max });
                 }
 
-                // 同じ行で隣り合った矩形をまとめる
-                var mergedRects = new List<Rect>();
-                foreach (var charRects in SplitRectsByRow(entry.Rects))
-                {
-                    mergedRects.Add(CalculateAABB(charRects));
-                }
-
-                entry.Rects = mergedRects;
-                _entries[i] = entry;
+                // 文字ごとのバウンディングボックスを行ごとのバウンディングボックスにまとめる
+                span.BoundingBoxes = CalculateLineBoundingBoxes(span.BoundingBoxes);
+                spans[i] = span;
             }
         }
 
-        List<List<Rect>> SplitRectsByRow(List<Rect> rects)
+        List<Rect> CalculateLineBoundingBoxes(List<Rect> charBoundingBoxes)
         {
-            var rectsList = new List<List<Rect>>();
-            var rowStartIndex = 0;
+            var lineBoundingBoxes = new List<Rect>();
+            var lineStartIndex = 0;
 
-            for (int i = 1, len = rects.Count; i < len; i++)
+            for (int i = 1; i < charBoundingBoxes.Count; i++)
             {
-                if (rects[i].xMin < rects[i - 1].xMin)
+                if (charBoundingBoxes[i].xMin < charBoundingBoxes[i - 1].xMin)
                 {
-                    rectsList.Add(rects.GetRange(rowStartIndex, i - rowStartIndex));
-                    rowStartIndex = i;
+                    lineBoundingBoxes.Add(CalculateAABB(charBoundingBoxes.GetRange(lineStartIndex, i - lineStartIndex)));
+                    lineStartIndex = i;
                 }
             }
 
-            if (rowStartIndex < rects.Count)
+            if (lineStartIndex < charBoundingBoxes.Count)
             {
-                rectsList.Add(rects.GetRange(rowStartIndex, rects.Count - rowStartIndex));
+                lineBoundingBoxes.Add(CalculateAABB(charBoundingBoxes.GetRange(lineStartIndex, charBoundingBoxes.Count - lineStartIndex)));
             }
 
-            return rectsList;
+            return lineBoundingBoxes;
         }
 
         Rect CalculateAABB(List<Rect> rects)
@@ -176,7 +177,7 @@ namespace Hypertext
             var min = Vector2.one * float.MaxValue;
             var max = Vector2.one * float.MinValue;
 
-            for (int i = 0, len = rects.Count; i < len; i++)
+            for (int i = 0; i < rects.Count; i++)
             {
                 if (rects[i].xMin < min.x)
                 {
@@ -202,7 +203,7 @@ namespace Hypertext
             return new Rect { min = min, max = max };
         }
 
-        Vector3 ToLocalPosition(Vector3 position, Camera camera)
+        Vector3 CalculateLocalPosition(Vector3 position, Camera pressEventCamera)
         {
             if (!RootCanvas)
             {
@@ -215,21 +216,21 @@ namespace Hypertext
             }
 
             var localPosition = Vector2.zero;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, position, camera, out localPosition);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, position, pressEventCamera, out localPosition);
             return localPosition;
         }
 
         void IPointerClickHandler.OnPointerClick(PointerEventData eventData)
         {
-            var localPosition = ToLocalPosition(eventData.position, eventData.pressEventCamera);
+            var localPosition = CalculateLocalPosition(eventData.position, eventData.pressEventCamera);
 
-            for (int i = 0; i < _entries.Count; i++)
+            for (int s = 0; s < spans.Count; s++)
             {
-                for (int j = 0; j < _entries[i].Rects.Count; j++)
+                for (int b = 0; b < spans[s].BoundingBoxes.Count; b++)
                 {
-                    if (_entries[i].Rects[j].Contains(localPosition))
+                    if (spans[s].BoundingBoxes[b].Contains(localPosition))
                     {
-                        _entries[i].OnClick(_entries[i].Word);
+                        spans[s].Callback(text.Substring(spans[s].StartIndex, spans[s].Length));
                         break;
                     }
                 }
