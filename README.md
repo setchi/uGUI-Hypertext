@@ -5,7 +5,8 @@
 ![screencast](screencast.gif)
 
 ```csharp
-text.OnClick(RegexURL, url => Debug.Log(url));
+var text = GetComponent<RegexHypertext>();
+text.OnClick(RegexUrl, url => Debug.Log(url));
 text.OnClick(RegexHashtag, hashtag => Debug.Log(hashtag));
 ```
 
