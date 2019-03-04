@@ -11,9 +11,9 @@ namespace Hypertext
 
         struct Entry
         {
-            public string RegexPattern;
-            public Color Color;
-            public Action<string> Callback;
+            public readonly string RegexPattern;
+            public readonly Color Color;
+            public readonly Action<string> Callback;
 
             public Entry(string regexPattern, Color color, Action<string> callback)
             {

@@ -10,8 +10,8 @@ namespace Hypertext
         readonly Action<T> onRelease;
 
         public int CountAll { get; set; }
-        public int CountActive { get { return CountAll - CountInactive; } }
-        public int CountInactive { get { return stack.Count; } }
+        public int CountActive => CountAll - CountInactive;
+        public int CountInactive => stack.Count;
 
         public ObjectPool(Action<T> onGet, Action<T> onRelease)
         {
@@ -32,10 +32,7 @@ namespace Hypertext
                 element = stack.Pop();
             }
 
-            if (onGet != null)
-            {
-                onGet(element);
-            }
+            onGet?.Invoke(element);
 
             return element;
         }
@@ -47,10 +44,7 @@ namespace Hypertext
                 UnityEngine.Debug.LogError("Internal error. Trying to destroy object that is already released to pool.");
             }
 
-            if (onRelease != null)
-            {
-                onRelease(element);
-            }
+            onRelease?.Invoke(element);
 
             stack.Push(element);
         }

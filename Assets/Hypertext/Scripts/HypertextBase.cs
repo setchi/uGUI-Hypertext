@@ -9,7 +9,7 @@ namespace Hypertext
     public abstract class HypertextBase : Text, IPointerClickHandler
     {
         Canvas rootCanvas;
-        Canvas RootCanvas { get { return rootCanvas ?? (rootCanvas = GetComponentInParent<Canvas>()); } }
+        Canvas RootCanvas => rootCanvas ?? (rootCanvas = GetComponentInParent<Canvas>());
 
         const int CharVerts = 6;
         readonly List<Span> spans = new List<Span>();
@@ -17,10 +17,10 @@ namespace Hypertext
 
         struct Span
         {
-            public int StartIndex;
-            public int Length;
-            public Color Color;
-            public Action<string> Callback;
+            public readonly int StartIndex;
+            public readonly int Length;
+            public readonly Color Color;
+            public readonly Action<string> Callback;
             public List<Rect> BoundingBoxes;
 
             public Span(int startIndex, int endIndex, Color color, Action<string> callback)
@@ -96,12 +96,12 @@ namespace Hypertext
         {
             var verticesCount = vertices.Count;
 
-            for (int i = 0; i < spans.Count; i++)
+            for (var i = 0; i < spans.Count; i++)
             {
                 var span = spans[i];
                 var endIndex = span.StartIndex + span.Length;
 
-                for (int textIndex = span.StartIndex; textIndex < endIndex; textIndex++)
+                for (var textIndex = span.StartIndex; textIndex < endIndex; textIndex++)
                 {
                     var vertexStartIndex = textIndex * CharVerts;
                     if (vertexStartIndex + CharVerts > verticesCount)
@@ -112,7 +112,7 @@ namespace Hypertext
                     var min = Vector2.one * float.MaxValue;
                     var max = Vector2.one * float.MinValue;
 
-                    for (int vertexIndex = 0; vertexIndex < CharVerts; vertexIndex++)
+                    for (var vertexIndex = 0; vertexIndex < CharVerts; vertexIndex++)
                     {
                         var vertex = vertices[vertexStartIndex + vertexIndex];
                         vertex.color = span.Color;
@@ -141,7 +141,7 @@ namespace Hypertext
                         }
                     }
 
-                    span.BoundingBoxes.Add(new Rect { min = min, max = max });
+                    span.BoundingBoxes.Add(new Rect {min = min, max = max});
                 }
 
                 // 文字ごとのバウンディングボックスを行ごとのバウンディングボックスにまとめる
@@ -150,18 +150,20 @@ namespace Hypertext
             }
         }
 
-        List<Rect> CalculateLineBoundingBoxes(List<Rect> charBoundingBoxes)
+        static List<Rect> CalculateLineBoundingBoxes(List<Rect> charBoundingBoxes)
         {
             var lineBoundingBoxes = new List<Rect>();
             var lineStartIndex = 0;
 
-            for (int i = 1; i < charBoundingBoxes.Count; i++)
+            for (var i = 1; i < charBoundingBoxes.Count; i++)
             {
-                if (charBoundingBoxes[i].xMin < charBoundingBoxes[i - 1].xMin)
+                if (charBoundingBoxes[i].xMin >= charBoundingBoxes[i - 1].xMin)
                 {
-                    lineBoundingBoxes.Add(CalculateAABB(charBoundingBoxes.GetRange(lineStartIndex, i - lineStartIndex)));
-                    lineStartIndex = i;
+                    continue;
                 }
+
+                lineBoundingBoxes.Add(CalculateAABB(charBoundingBoxes.GetRange(lineStartIndex, i - lineStartIndex)));
+                lineStartIndex = i;
             }
 
             if (lineStartIndex < charBoundingBoxes.Count)
@@ -172,12 +174,12 @@ namespace Hypertext
             return lineBoundingBoxes;
         }
 
-        Rect CalculateAABB(List<Rect> rects)
+        static Rect CalculateAABB(IReadOnlyList<Rect> rects)
         {
             var min = Vector2.one * float.MaxValue;
             var max = Vector2.one * float.MinValue;
 
-            for (int i = 0; i < rects.Count; i++)
+            for (var i = 0; i < rects.Count; i++)
             {
                 if (rects[i].xMin < min.x)
                 {
@@ -200,7 +202,7 @@ namespace Hypertext
                 }
             }
 
-            return new Rect { min = min, max = max };
+            return new Rect {min = min, max = max};
         }
 
         Vector3 CalculateLocalPosition(Vector3 position, Camera pressEventCamera)
@@ -215,7 +217,7 @@ namespace Hypertext
                 return transform.InverseTransformPoint(position);
             }
 
-            var localPosition = Vector2.zero;
+            Vector2 localPosition;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, position, pressEventCamera, out localPosition);
             return localPosition;
         }
@@ -224,9 +226,9 @@ namespace Hypertext
         {
             var localPosition = CalculateLocalPosition(eventData.position, eventData.pressEventCamera);
 
-            for (int s = 0; s < spans.Count; s++)
+            for (var s = 0; s < spans.Count; s++)
             {
-                for (int b = 0; b < spans[s].BoundingBoxes.Count; b++)
+                for (var b = 0; b < spans[s].BoundingBoxes.Count; b++)
                 {
                     if (spans[s].BoundingBoxes[b].Contains(localPosition))
                     {
