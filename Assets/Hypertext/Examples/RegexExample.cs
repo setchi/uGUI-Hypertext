@@ -4,7 +4,7 @@ namespace Hypertext
 {
     public class RegexExample : MonoBehaviour
     {
-        [SerializeField] RegexHypertext text;
+        [SerializeField] RegexHypertext text = default;
 
         const string RegexUrl = "http(s)?://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%&=]*)?";
         const string RegexHashtag = "[#＃][Ａ-Ｚａ-ｚA-Za-z一-鿆0-9０-９ぁ-ヶｦ-ﾟー]+";
