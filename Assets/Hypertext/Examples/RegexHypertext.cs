@@ -64,7 +64,12 @@ namespace Hypertext
         {
             foreach (var entry in entries)
             {
-                foreach (Match match in Regex.Matches(text, entry.RegexPattern))
+#if UNITY_2019_1_OR_NEWER
+                var _text = text.Replace(" ", "").Replace("\n", "");
+#else
+                var _text = text;
+#endif
+                foreach (Match match in Regex.Matches(_text, entry.RegexPattern))
                 {
                     OnClick(match.Index, match.Value.Length, entry.Color, entry.Callback);
                 }
