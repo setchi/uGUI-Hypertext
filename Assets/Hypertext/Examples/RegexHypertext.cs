@@ -62,18 +62,36 @@ namespace Hypertext
         /// </summary>
         protected override void AddListeners()
         {
+            var lineCount = CountChar(text, '\n') + 1;
+            bool hasFolded = lineCount != cachedTextGenerator.lineCount;
+
             foreach (var entry in entries)
             {
-#if UNITY_2019_1_OR_NEWER
-                var _text = text.Replace(" ", "").Replace("\n", "");
-#else
-                var _text = text;
-#endif
-                foreach (Match match in Regex.Matches(_text, entry.RegexPattern))
+                foreach (Match match in Regex.Matches(text, entry.RegexPattern))
                 {
+#if UNITY_2019_1_OR_NEWER
+                    if (hasFolded)
+                    {
+                        OnClick(match.Index, match.Value.Length, entry.Color, entry.Callback);
+                    }
+                    else
+                    {
+                        // 折り返していない場合のみ「空白」と「改行」が描画されないため、調整する
+                        var head = text.Substring(0, match.Index);
+                        var count = CountChar(head, ' ') + CountChar(head, '\n');
+                        OnClick(match.Index - count, match.Value.Length, entry.Color, entry.Callback);
+                    }
+#else
                     OnClick(match.Index, match.Value.Length, entry.Color, entry.Callback);
+#endif
                 }
             }
+        }
+
+        // 文字の出現回数をカウント
+        public static int CountChar(string s, char c)
+        {
+            return s.Length - s.Replace(c.ToString(), "").Length;
         }
     }
 }
