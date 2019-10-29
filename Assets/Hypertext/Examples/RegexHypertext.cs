@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -62,7 +63,7 @@ namespace Hypertext
         /// </summary>
         protected override void AddListeners()
         {
-            var lineCount = CountChar(text, '\n') + 1;
+            var lineCount = text.Count(x => x == '\n') + 1;
             bool hasFolded = lineCount != cachedTextGenerator.lineCount;
 
             foreach (var entry in entries)
@@ -78,7 +79,7 @@ namespace Hypertext
                     {
                         // 折り返していない場合のみ「空白」と「改行」が描画されないため、調整する
                         var head = text.Substring(0, match.Index);
-                        var count = CountChar(head, ' ') + CountChar(head, '\n');
+                        var count = head.Count(x => x == ' ') + head.Count(x => x == '\n');
                         OnClick(match.Index - count, match.Value.Length, entry.Color, entry.Callback);
                     }
 #else
@@ -86,12 +87,6 @@ namespace Hypertext
 #endif
                 }
             }
-        }
-
-        // 文字の出現回数をカウント
-        public static int CountChar(string s, char c)
-        {
-            return s.Length - s.Replace(c.ToString(), "").Length;
         }
     }
 }
