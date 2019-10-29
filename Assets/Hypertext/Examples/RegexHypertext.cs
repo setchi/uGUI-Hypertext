@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -62,11 +63,28 @@ namespace Hypertext
         /// </summary>
         protected override void AddListeners()
         {
+            var lineCount = text.Count(x => x == '\n') + 1;
+            bool hasFolded = lineCount != cachedTextGenerator.lineCount;
+
             foreach (var entry in entries)
             {
                 foreach (Match match in Regex.Matches(text, entry.RegexPattern))
                 {
+#if UNITY_2019_1_OR_NEWER
+                    if (hasFolded)
+                    {
+                        OnClick(match.Index, match.Value.Length, entry.Color, entry.Callback);
+                    }
+                    else
+                    {
+                        // 折り返していない場合のみ「空白」と「改行」が描画されないため、調整する
+                        var head = text.Substring(0, match.Index);
+                        var count = head.Count(x => x == ' ') + head.Count(x => x == '\n');
+                        OnClick(match.Index - count, match.Value.Length, entry.Color, entry.Callback);
+                    }
+#else
                     OnClick(match.Index, match.Value.Length, entry.Color, entry.Callback);
+#endif
                 }
             }
         }
