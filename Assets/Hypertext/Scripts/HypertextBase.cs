@@ -217,8 +217,13 @@ namespace Hypertext
                 return transform.InverseTransformPoint(position);
             }
 
-            Vector2 localPosition;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, position, pressEventCamera, out localPosition);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                rectTransform,
+                position,
+                pressEventCamera,
+                out var localPosition
+            );
+
             return localPosition;
         }
 
