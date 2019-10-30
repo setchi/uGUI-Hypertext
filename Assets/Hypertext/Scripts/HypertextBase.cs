@@ -181,8 +181,8 @@ namespace Hypertext
                 var startIndex = visibleCharIndexMap[span.StartIndex];
                 var endIndex = visibleCharIndexMap[span.StartIndex + span.Length - 1];
 
-                startIndex = Mathf.Clamp(startIndex, 0, visibleCharIndexMap.Last());
-                endIndex = Mathf.Clamp(endIndex, 0, visibleCharIndexMap.Last());
+                startIndex = Mathf.Clamp(startIndex, 0, text.Length - 1);
+                endIndex = Mathf.Clamp(endIndex, 0, text.Length - 1);
 
                 for (var textIndex = startIndex; textIndex <= endIndex; textIndex++)
                 {
