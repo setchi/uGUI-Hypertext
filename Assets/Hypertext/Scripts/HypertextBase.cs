@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -8,14 +9,7 @@ namespace Hypertext
 {
     public abstract class HypertextBase : Text, IPointerClickHandler
     {
-        Canvas rootCanvas;
-        Canvas RootCanvas => rootCanvas ?? (rootCanvas = GetComponentInParent<Canvas>());
-
-        const int CharVerts = 6;
-        readonly List<Span> spans = new List<Span>();
-        static readonly ObjectPool<List<UIVertex>> verticesPool = new ObjectPool<List<UIVertex>>(null, l => l.Clear());
-
-        struct Span
+        class Span
         {
             public readonly int StartIndex;
             public readonly int Length;
@@ -32,6 +26,30 @@ namespace Hypertext
                 BoundingBoxes = new List<Rect>();
             }
         };
+
+        readonly List<Span> spans = new List<Span>();
+
+        // TODO: 頂点が生成されない空白文字をすべて洗い出す
+        readonly char[] invisibleChars =
+        {
+            Space,
+            Tab,
+            LineFeed
+        };
+        static readonly ObjectPool<List<UIVertex>> verticesPool = new ObjectPool<List<UIVertex>>(null, l => l.Clear());
+
+        const int CharVerts = 6;
+        const char 
+            Tab = '\t',
+            LineFeed = '\n',
+            Space = ' ',
+            LesserThan = '<',
+            GreaterThan = '>';
+
+        int[] visibleCharIndexMap;
+
+        Canvas rootCanvas;
+        Canvas RootCanvas => rootCanvas ?? (rootCanvas = GetComponentInParent<Canvas>());
 
         /// <summary>
         /// 指定した部分文字列にクリックイベントを登録します
@@ -75,33 +93,98 @@ namespace Hypertext
         /// </summary>
         protected abstract void AddListeners();
 
-        protected override void OnPopulateMesh(VertexHelper vertexHelper)
+        readonly UIVertex[] tempVerts = new UIVertex[4];
+        protected override void OnPopulateMesh(VertexHelper toFill)
         {
-            base.OnPopulateMesh(vertexHelper);
+            if (font == null)
+            {
+                return;
+            }
+
+            m_DisableFontTextureRebuiltCallback = true;
+
+            var extents = rectTransform.rect.size;
+
+            var settings = GetGenerationSettings(extents);
+            settings.generateOutOfBounds = true;
+            cachedTextGenerator.PopulateWithErrors(text, settings, gameObject);
+
+            var verts = cachedTextGenerator.verts;
+            var unitsPerPixel = 1 / pixelsPerUnit;
+            int vertCount = verts.Count;
+
+            if (vertCount <= 0)
+            {
+                toFill.Clear();
+                return;
+            }
+
+            var roundingOffset = new Vector2(verts[0].position.x, verts[0].position.y) * unitsPerPixel;
+            roundingOffset = PixelAdjustPoint(roundingOffset) - roundingOffset;
+            toFill.Clear();
+
+            if (roundingOffset != Vector2.zero)
+            {
+                for (int i = 0; i < vertCount; ++i)
+                {
+                    int tempVertsIndex = i & 3;
+                    tempVerts[tempVertsIndex] = verts[i];
+                    tempVerts[tempVertsIndex].position *= unitsPerPixel;
+                    tempVerts[tempVertsIndex].position.x += roundingOffset.x;
+                    tempVerts[tempVertsIndex].position.y += roundingOffset.y;
+
+                    if (tempVertsIndex == 3)
+                    {
+                        toFill.AddUIVertexQuad(tempVerts);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < vertCount; ++i)
+                {
+                    int tempVertsIndex = i & 3;
+                    tempVerts[tempVertsIndex] = verts[i];
+                    tempVerts[tempVertsIndex].position *= unitsPerPixel;
+
+                    if (tempVertsIndex == 3)
+                    {
+                        toFill.AddUIVertexQuad(tempVerts);
+                    }
+                }
+            }
+
+            m_DisableFontTextureRebuiltCallback = false;
+
+            var vertices = verticesPool.Get();
+            toFill.GetUIVertexStream(vertices);
+
+            GenerateVisibleCharIndexMap(vertices.Count < text.Length * CharVerts);
 
             spans.Clear();
             AddListeners();
+            GenerateHrefBoundingBoxes(ref vertices);
 
-            var vertices = verticesPool.Get();
-            vertexHelper.GetUIVertexStream(vertices);
-
-            Modify(ref vertices);
-
-            vertexHelper.Clear();
-            vertexHelper.AddUIVertexTriangleStream(vertices);
+            toFill.Clear();
+            toFill.AddUIVertexTriangleStream(vertices);
             verticesPool.Release(vertices);
         }
 
-        void Modify(ref List<UIVertex> vertices)
+        void GenerateHrefBoundingBoxes(ref List<UIVertex> vertices)
         {
             var verticesCount = vertices.Count;
 
             for (var i = 0; i < spans.Count; i++)
             {
                 var span = spans[i];
-                var endIndex = span.StartIndex + span.Length;
 
-                for (var textIndex = span.StartIndex; textIndex < endIndex; textIndex++)
+                var startIndex = visibleCharIndexMap[span.StartIndex];
+                var endIndex = visibleCharIndexMap[span.StartIndex + span.Length - 1];
+
+                startIndex = Mathf.Clamp(startIndex, 0, text.Length - 1);
+                endIndex = Mathf.Clamp(endIndex, 0, text.Length - 1);
+
+                for (var textIndex = startIndex; textIndex <= endIndex; textIndex++)
                 {
                     var vertexStartIndex = textIndex * CharVerts;
                     if (vertexStartIndex + CharVerts > verticesCount)
@@ -146,7 +229,6 @@ namespace Hypertext
 
                 // 文字ごとのバウンディングボックスを行ごとのバウンディングボックスにまとめる
                 span.BoundingBoxes = CalculateLineBoundingBoxes(span.BoundingBoxes);
-                spans[i] = span;
             }
         }
 
@@ -203,6 +285,52 @@ namespace Hypertext
             }
 
             return new Rect {min = min, max = max};
+        }
+
+        void GenerateVisibleCharIndexMap(bool verticesReduced)
+        {
+            if (visibleCharIndexMap == null || visibleCharIndexMap.Length < text.Length)
+            {
+                Array.Resize(ref visibleCharIndexMap, text.Length);
+            }
+
+            if (!verticesReduced)
+            {
+                for (var i = 0; i < visibleCharIndexMap.Length; i++)
+                {
+                    visibleCharIndexMap[i] = i;
+                }
+                return;
+            }
+
+            var offset = 0;
+            var inTag = false;
+
+            for (var i = 0; i < text.Length; i++)
+            {
+                var character = text[i];
+
+                if (inTag)
+                {
+                    offset++;
+
+                    if (character == GreaterThan)
+                    {
+                        inTag = false;
+                    }
+                }
+                else if (supportRichText && character == LesserThan)
+                {
+                    offset++;
+                    inTag = true;
+                }
+                else if (invisibleChars.Contains(character))
+                {
+                    offset++;
+                }
+
+                visibleCharIndexMap[i] = i - offset;
+            }
         }
 
         Vector3 CalculateLocalPosition(Vector3 position, Camera pressEventCamera)
