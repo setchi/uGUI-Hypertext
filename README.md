@@ -28,7 +28,7 @@ protected void OnClick(int startIndex, int length, Color color, Action<string> o
 ```
 
 ## 開発環境
-Unity 2018.3.6f1
+Unity 2019.2.10f1
 
 ## Author
 [setchi](https://github.com/setchi)
