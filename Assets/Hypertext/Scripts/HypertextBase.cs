@@ -17,10 +17,10 @@ namespace Hypertext
             public readonly Action<string> Callback;
             public List<Rect> BoundingBoxes;
 
-            public Span(int startIndex, int endIndex, Color color, Action<string> callback)
+            public Span(int startIndex, int length, Color color, Action<string> callback)
             {
                 StartIndex = startIndex;
-                Length = endIndex;
+                Length = length;
                 Color = color;
                 Callback = callback;
                 BoundingBoxes = new List<Rect>();
@@ -52,7 +52,7 @@ namespace Hypertext
         Canvas RootCanvas => rootCanvas ?? (rootCanvas = GetComponentInParent<Canvas>());
 
         /// <summary>
-        /// 指定した部分文字列にクリックイベントを登録します
+        /// 指定した部分文字列にクリックイベントリスナを登録します
         /// </summary>
         /// <param name="startIndex">部分文字列の開始文字位置</param>
         /// <param name="length">部分文字列の長さ</param>
@@ -88,8 +88,8 @@ namespace Hypertext
 
         /// <summary>
         /// イベントリスナを追加します
-        /// テキストの変更などでイベントの再登録が必要なときにも呼び出されます
-        /// <see cref="HypertextBase.OnClick"/> を使ってクリックイベントを登録してください
+        /// テキストの変更などでイベントリスナの再登録が必要なときにも呼び出されます
+        /// <see cref="HypertextBase.OnClick"/> を使ってクリックイベントリスナを登録してください
         /// </summary>
         protected abstract void AddListeners();
 
@@ -154,8 +154,6 @@ namespace Hypertext
                 }
             }
 
-            m_DisableFontTextureRebuiltCallback = false;
-
             var vertices = verticesPool.Get();
             toFill.GetUIVertexStream(vertices);
 
@@ -168,6 +166,8 @@ namespace Hypertext
             toFill.Clear();
             toFill.AddUIVertexTriangleStream(vertices);
             verticesPool.Release(vertices);
+
+            m_DisableFontTextureRebuiltCallback = false;
         }
 
         void GenerateHrefBoundingBoxes(ref List<UIVertex> vertices)
@@ -180,9 +180,6 @@ namespace Hypertext
 
                 var startIndex = visibleCharIndexMap[span.StartIndex];
                 var endIndex = visibleCharIndexMap[span.StartIndex + span.Length - 1];
-
-                startIndex = Mathf.Clamp(startIndex, 0, text.Length - 1);
-                endIndex = Mathf.Clamp(endIndex, 0, text.Length - 1);
 
                 for (var textIndex = startIndex; textIndex <= endIndex; textIndex++)
                 {
@@ -312,7 +309,7 @@ namespace Hypertext
 
                 if (inTag)
                 {
-                    offset++;
+                    offset--;
 
                     if (character == GreaterThan)
                     {
@@ -321,15 +318,15 @@ namespace Hypertext
                 }
                 else if (supportRichText && character == LesserThan)
                 {
-                    offset++;
+                    offset--;
                     inTag = true;
                 }
                 else if (invisibleChars.Contains(character))
                 {
-                    offset++;
+                    offset--;
                 }
 
-                visibleCharIndexMap[i] = i - offset;
+                visibleCharIndexMap[i] = Mathf.Max(0, i + offset);
             }
         }
 

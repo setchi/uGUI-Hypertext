@@ -24,7 +24,7 @@ namespace Hypertext
         }
 
         /// <summary>
-        /// 正規表現にマッチした部分文字列にクリックイベントを登録します
+        /// 正規表現にマッチした部分文字列にクリックイベントリスナを登録します
         /// </summary>
         /// <param name="regexPattern">正規表現</param>
         /// <param name="onClick">クリック時のコールバック</param>
@@ -34,7 +34,7 @@ namespace Hypertext
         }
 
         /// <summary>
-        /// 正規表現にマッチした部分文字列に色とクリックイベントを登録します
+        /// 正規表現にマッチした部分文字列に色とクリックイベントリスナを登録します
         /// </summary>
         /// <param name="regexPattern">正規表現</param>
         /// <param name="color">テキストカラー</param>
@@ -58,7 +58,7 @@ namespace Hypertext
         /// <summary>
         /// イベントリスナを追加します
         /// テキストの変更などでイベントの再登録が必要なときにも呼び出されます
-        /// <see cref="HypertextBase.OnClick"/> を使ってクリックイベントを登録してください
+        /// <see cref="HypertextBase.OnClick"/> を使ってクリックイベントリスナを登録してください
         /// </summary>
         protected override void AddListeners()
         {
