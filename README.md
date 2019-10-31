@@ -1,4 +1,4 @@
-# uGUI-Hypertext ![license](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)
+# uGUI-Hypertext [![license](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](https://github.com/setchi/uGUI-Hypertext/blob/master/LICENSE)
 
 `UnityEngine.UI.Text` で任意の部分文字列をクリック可能にするコンポーネントです。[English](https://translate.google.com/translate?sl=ja&tl=en&u=https://github.com/setchi/uGUI-Hypertext) (by Google Translate)
 
@@ -34,4 +34,4 @@ Unity 2019.2.10f1
 [setchi](https://github.com/setchi)
 
 ## License
-MIT
+[MIT](https://github.com/setchi/uGUI-Hypertext/blob/master/LICENSE)
