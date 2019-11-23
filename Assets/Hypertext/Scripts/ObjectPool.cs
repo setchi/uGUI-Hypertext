@@ -1,4 +1,10 @@
-﻿using System;
+﻿/*
+ * uGUI-Hypertext (https://github.com/setchi/uGUI-Hypertext)
+ * Copyright (c) 2019 setchi
+ * Licensed under MIT (https://github.com/setchi/uGUI-Hypertext/blob/master/LICENSE)
+ */
+
+using System;
 using System.Collections.Generic;
 
 namespace Hypertext
