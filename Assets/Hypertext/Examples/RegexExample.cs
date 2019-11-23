@@ -13,7 +13,7 @@ namespace Hypertext
         [SerializeField] RegexHypertext text = default;
 
         const string RegexUrl = @"https?://(?:[!-~]+\.)+[!-~]+";
-        const string RegexHashtag = @"[#＃][Ａ-Ｚａ-ｚA-Za-z一-鿆0-9０-９ぁ-ヶｦ-ﾟー]+";
+        const string RegexHashtag = @"[\s^][#＃]\w+";
 
         void Start()
         {
