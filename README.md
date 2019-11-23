@@ -1,14 +1,27 @@
-# uGUI-Hypertext [![license](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](https://github.com/setchi/uGUI-Hypertext/blob/master/LICENSE)
+# uGUI-Hypertext [![license](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](https://github.com/setchi/uGUI-Hypertext/blob/master/LICENSE) [![Release](https://img.shields.io/github/release/setchi/uGUI-Hypertext.svg?style=flat-square)](https://github.com/setchi/uGUI-Hypertext/releases/latest)
 
 `UnityEngine.UI.Text` で任意の部分文字列をクリック可能にするコンポーネントです。[English](https://translate.google.com/translate?sl=ja&tl=en&u=https://github.com/setchi/uGUI-Hypertext) (by Google Translate)
 
 ![screencast](screencast.gif)
 
 ```csharp
-var text = GetComponent<RegexHypertext>();
-text.OnClick(RegexUrl, url => Debug.Log(url));
-text.OnClick(RegexHashtag, hashtag => Debug.Log(hashtag));
+public class RegexExample : MonoBehaviour
+{
+    [SerializeField] RegexHypertext text = default;
+
+    const string RegexUrl = @"https?://(?:[!-~]+\.)+[!-~]+";
+    const string RegexHashtag = @"[\s^][#＃]\w+";
+
+    void Start()
+    {
+        text.OnClick(RegexUrl, Color.cyan, url => Debug.Log(url));
+        text.OnClick(RegexHashtag, Color.green, hashtag => Debug.Log(hashtag));
+    }
+}
 ```
+
+## 導入
+[Releases](https://github.com/setchi/uGUI-Hypertext/releases/latest) から `Hypertext.unitypackage` をダウンロードして Unity Project にインポートします。
 
 ## サンプル
 [Hypertext/Examples](Assets/Hypertext/Examples/) に正規表現によるパターンマッチで任意の部分文字列をクリック可能にする実装例があるので参考にしてください。
