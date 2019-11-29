@@ -1,4 +1,4 @@
-# uGUI-Hypertext [![license](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](https://github.com/setchi/uGUI-Hypertext/blob/master/LICENSE) [![Release](https://img.shields.io/github/release/setchi/uGUI-Hypertext.svg?style=flat-square)](https://github.com/setchi/uGUI-Hypertext/releases/latest)
+# uGUI-Hypertext [![license](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](https://github.com/setchi/uGUI-Hypertext/blob/master/LICENSE) [![Release](https://img.shields.io/github/release/setchi/uGUI-Hypertext.svg?style=flat-square&logo=github)](https://github.com/setchi/uGUI-Hypertext/releases/latest)
 
 `UnityEngine.UI.Text` で任意の部分文字列をクリック可能にするコンポーネントです。[English](https://translate.google.com/translate?sl=ja&tl=en&u=https://github.com/setchi/uGUI-Hypertext) (by Google Translate)
 
